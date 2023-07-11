@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -100,7 +100,7 @@ namespace CesiumForUnity
 
             string packSource = Path.Combine(tempPath, "package");
             string packTarget = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            
+
             Debug.Log("Packing directory " + packSource + " to output directory " + packTarget);
 
             PackRequest request = Client.Pack(packSource, packTarget);

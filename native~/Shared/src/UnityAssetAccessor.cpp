@@ -5,6 +5,7 @@
 #include <CesiumAsync/IAssetResponse.h>
 #include <CesiumUtility/ScopeGuard.h>
 
+#include <DotNet/CesiumForUnity/UnityRequestUrlOverride.h>
 #include <DotNet/CesiumForUnity/Helpers.h>
 #include <DotNet/CesiumForUnity/NativeDownloadHandler.h>
 #include <DotNet/System/Action1.h>
@@ -81,9 +82,10 @@ public:
   UnityAssetRequest(
       const DotNet::UnityEngine::Networking::UnityWebRequest& request,
       const HttpHeaders& headers,
-      const DotNet::CesiumForUnity::NativeDownloadHandler& handler)
+      const DotNet::CesiumForUnity::NativeDownloadHandler& handler,
+      const std::string& url)
       : _method(request.method().ToStlString()),
-        _url(request.url().ToStlString()),
+        _url(url),
         _headers(headers),
         _response(request, handler) {}
 
@@ -169,20 +171,27 @@ UnityAssetAccessor::get(
 
     auto future = promise.getFuture();
 
+    DotNet::CesiumForUnity::UnityRequestUrlOverride::SetRequest(request);
+
     UnityEngine::Networking::UnityWebRequestAsyncOperation op =
         request.SendWebRequest();
     op.add_completed(System::Action1<UnityEngine::AsyncOperation>(
         [request,
          headers = std::move(requestHeaders),
          promise = std::move(promise),
-         handler = std::move(handler)](
+         handler = std::move(handler),
+         sourceUrl = url
+        ](
             const UnityEngine::AsyncOperation& operation) mutable {
           ScopeGuard disposeHandler{[&handler]() { handler.Dispose(); }};
           if (request.isDone() &&
               request.result() !=
                   UnityEngine::Networking::Result::ConnectionError) {
-            promise.resolve(
-                std::make_shared<UnityAssetRequest>(request, headers, handler));
+            promise.resolve(std::make_shared<UnityAssetRequest>(
+                request,
+                headers,
+                handler,
+                request.url().ToStlString()));
           } else {
             promise.reject(std::runtime_error(
                 "Request failed: " + request.error().ToStlString()));
@@ -251,20 +260,27 @@ UnityAssetAccessor::request(
 
     auto future = promise.getFuture();
 
+    DotNet::CesiumForUnity::UnityRequestUrlOverride::SetRequest(request);
+
     UnityEngine::Networking::UnityWebRequestAsyncOperation op =
         request.SendWebRequest();
     op.add_completed(System::Action1<UnityEngine::AsyncOperation>(
         [request,
          headers = std::move(requestHeaders),
          promise = std::move(promise),
-         handler = std::move(downloadHandler)](
+         handler = std::move(downloadHandler),
+         sourceUrl =url
+        ](
             const UnityEngine::AsyncOperation& operation) mutable {
           ScopeGuard disposeHandler{[&handler]() { handler.Dispose(); }};
           if (request.isDone() &&
               request.result() !=
                   UnityEngine::Networking::Result::ConnectionError) {
-            promise.resolve(
-                std::make_shared<UnityAssetRequest>(request, headers, handler));
+            promise.resolve(std::make_shared<UnityAssetRequest>(
+                request,
+                headers,
+                handler,
+                request.url().ToStlString()));
           } else {
             promise.reject(std::runtime_error(
                 "Request failed: " + request.error().ToStlString()));

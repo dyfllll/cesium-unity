@@ -161,25 +161,25 @@ namespace Build
                     AddGeneratedFiles("!UNITY_EDITOR && UNITY_STANDALONE_WIN", generatedRuntimePath, Path.Combine(outputPackagePath, "Runtime", "generated"));
 
                     // Clean the generated code directory.
-                    Directory.Delete(generatedRuntimePath, true);
-                    Directory.CreateDirectory(generatedRuntimePath);
+                    // Directory.Delete(generatedRuntimePath, true);
+                    // Directory.CreateDirectory(generatedRuntimePath);
 
                     // TODO: we're currently only building for Android on Windows. This should be an option, or a separate build command.
-                    Console.WriteLine("**** Compiling for Android Player");
-                    unity.Run(new[]
-                    {
-                        "-batchmode",
-                        "-nographics",
-                        "-projectPath",
-                        Utility.ProjectRoot,
-                        "-buildTarget",
-                        "Android",
-                        "-executeMethod",
-                        "CesiumForUnity.BuildCesiumForUnity.CompileForAndroidAndExit"
-                    });
+                    // Console.WriteLine("**** Compiling for Android Player");
+                    // unity.Run(new[]
+                    // {
+                    //     "-batchmode",
+                    //     "-nographics",
+                    //     "-projectPath",
+                    //     Utility.ProjectRoot,
+                    //     "-buildTarget",
+                    //     "Android",
+                    //     "-executeMethod",
+                    //     "CesiumForUnity.BuildCesiumForUnity.CompileForAndroidAndExit"
+                    // });
 
-                    Console.WriteLine("**** Adding generated files (for the Android Player) to the package");
-                    AddGeneratedFiles("!UNITY_EDITOR && UNITY_ANDROID", generatedRuntimePath, Path.Combine(outputPackagePath, "Runtime", "generated"));
+                    // Console.WriteLine("**** Adding generated files (for the Android Player) to the package");
+                    // AddGeneratedFiles("!UNITY_EDITOR && UNITY_ANDROID", generatedRuntimePath, Path.Combine(outputPackagePath, "Runtime", "generated"));
                 }
                 else if (OperatingSystem.IsMacOS())
                 {

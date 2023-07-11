@@ -520,8 +520,9 @@ namespace CesiumForUnity
             svc.transform.SetPositionAndRotation(p, q);
 
             bool isPlaying = EditorApplication.isPlaying;
-            EditorApplication.update += () => {};
+            EditorApplication.update += () => { };
 #endif
+            UnityRequestUrlOverride.SetRequest(null);
         }
     }
 }

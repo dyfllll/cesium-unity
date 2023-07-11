@@ -1,4 +1,4 @@
-using Reinterop;
+﻿using Reinterop;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -64,8 +64,8 @@ namespace CesiumForUnity
             request.downloadHandler = new NativeDownloadHandler();
             request.SetRequestHeader("name", "value");
             request.GetResponseHeader("name");
-            Dictionary<string,string>.Enumerator enumerator = request.GetResponseHeaders().GetEnumerator();
-            while(enumerator.MoveNext())
+            Dictionary<string, string>.Enumerator enumerator = request.GetResponseHeaders().GetEnumerator();
+            while (enumerator.MoveNext())
             {
                 string key = enumerator.Current.Key;
                 string value = enumerator.Current.Value;
@@ -211,6 +211,7 @@ namespace CesiumForUnity
             assetDetails.loaded = true;
 
             EditorApplication.ExecuteMenuItem("Window/General/Hierarchy");
+            UnityRequestUrlOverride.SetRequest(null);
         }
     }
 }
