@@ -5,6 +5,9 @@
 #include <DotNet/CesiumForUnity/CesiumCreditSystem.h>
 #include <DotNet/CesiumForUnity/CesiumGeoreference.h>
 #include <DotNet/System/Action.h>
+#include <DotNet/System/Collections/Generic/List1.h>
+#include <DotNet/UnityEngine/Vector3.h>
+#include <DotNet/UnityEngine/GameObject.h>
 
 #include <memory>
 
@@ -39,6 +42,13 @@ public:
 
   void RecreateTileset(const DotNet::CesiumForUnity::Cesium3DTileset& tileset);
   void FocusTileset(const DotNet::CesiumForUnity::Cesium3DTileset& tileset);
+  bool RaycastIfNeedLoad(
+      const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
+      const DotNet::UnityEngine::Vector3& origin,
+      const DotNet::UnityEngine::Vector3& direction,
+      DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
+          result);
+
 
   Cesium3DTilesSelection::Tileset* getTileset();
   const Cesium3DTilesSelection::Tileset* getTileset() const;
@@ -53,6 +63,14 @@ private:
   void updateLastViewUpdateResultState(
       const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
       const Cesium3DTilesSelection::ViewUpdateResult& currentResult);
+  bool RaycastIfNeedLoad(
+      const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
+      const Cesium3DTilesSelection::Tile* tile,
+      const glm::dvec3& origin,
+      const glm::dvec3& direction,
+      DotNet::System::Collections::Generic::List1<
+          DotNet::UnityEngine::GameObject>
+          result);
 
   std::unique_ptr<Cesium3DTilesSelection::Tileset> _pTileset;
   Cesium3DTilesSelection::ViewUpdateResult _lastUpdateResult;

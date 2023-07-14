@@ -1,19 +1,24 @@
 #include "Cesium3DTilesetImpl.h"
 
 #include "CameraManager.h"
+#include "CesiumGeoreferenceImpl.h"
 #include "UnityPrepareRendererResources.h"
 #include "UnityTileExcluderAdaptor.h"
 #include "UnityTilesetExternals.h"
+#include "UnityTransforms.h"
 
 #include <Cesium3DTilesSelection/IonRasterOverlay.h>
 #include <Cesium3DTilesSelection/Tileset.h>
+#include <CesiumGeospatial/Ellipsoid.h>
 #include <CesiumGeospatial/GlobeTransforms.h>
+#include <CesiumUtility/Math.h>
 
 #include <DotNet/CesiumForUnity/Cesium3DTileset.h>
 #include <DotNet/CesiumForUnity/Cesium3DTilesetLoadFailureDetails.h>
 #include <DotNet/CesiumForUnity/Cesium3DTilesetLoadType.h>
 #include <DotNet/CesiumForUnity/CesiumDataSource.h>
 #include <DotNet/CesiumForUnity/CesiumGeoreference.h>
+#include <DotNet/CesiumForUnity/CesiumGlobeAnchor.h>
 #include <DotNet/CesiumForUnity/CesiumRasterOverlay.h>
 #include <DotNet/CesiumForUnity/CesiumRuntimeSettings.h>
 #include <DotNet/CesiumForUnity/CesiumTileExcluder.h>
@@ -28,6 +33,8 @@
 #include <DotNet/UnityEngine/Experimental/Rendering/GraphicsFormat.h>
 #include <DotNet/UnityEngine/GameObject.h>
 #include <DotNet/UnityEngine/Material.h>
+#include <DotNet/UnityEngine/Matrix4x4.h>
+#include <DotNet/UnityEngine/MeshCollider.h>
 #include <DotNet/UnityEngine/Quaternion.h>
 #include <DotNet/UnityEngine/SystemInfo.h>
 #include <DotNet/UnityEngine/Time.h>
@@ -41,7 +48,10 @@
 #include <DotNet/UnityEditor/EditorApplication.h>
 #include <DotNet/UnityEditor/SceneView.h>
 #endif
+using namespace DotNet::CesiumForUnity;
 
+using namespace CesiumGeospatial;
+using namespace CesiumUtility;
 using namespace Cesium3DTilesSelection;
 using namespace DotNet;
 
@@ -324,6 +334,179 @@ void Cesium3DTilesetImpl::FocusTileset(
       unityCameraFrontf,
       UnityEngine::Vector3::up()));
 #endif
+}
+
+bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
+    const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
+    const Cesium3DTilesSelection::Tile* tile,
+    const glm::dvec3& origin,
+    const glm::dvec3& direction,
+    DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
+        result) {
+
+  const BoundingVolume& boundingVolume = tile->getBoundingVolume();
+
+  struct Operation {
+    const glm::dvec3& origin;
+    const glm::dvec3& direction;
+
+    // Ö»¼ì²âaabb
+    bool operator()(
+        const CesiumGeometry::OrientedBoundingBox& boundingBox) noexcept {
+      CesiumGeometry::AxisAlignedBox aabb = boundingBox.toAxisAligned();
+      glm::dvec3 pMin = glm::dvec3(aabb.minimumX, aabb.minimumY, aabb.minimumZ);
+      glm::dvec3 pMax = glm::dvec3(aabb.maximumX, aabb.maximumY, aabb.maximumZ);
+
+      glm::dvec3 invDir = glm::dvec3(
+          direction.x != 0 ? (1.0 / direction.x) : 1e10,
+          direction.y != 0 ? (1.0 / direction.y) : 1e10,
+          direction.z != 0 ? (1.0 / direction.z) : 1e10);
+
+      glm::dvec3 minResult = (pMin - origin) * invDir;
+      glm::dvec3 maxResult = (pMax - origin) * invDir;
+
+      glm::dvec3 dirIsNeg = glm::dvec3(
+          (int)(direction.x > 0),
+          (int)(direction.y > 0),
+          (int)(direction.z > 0));
+
+      for (int i = 0; i < 3; i++) {
+        if (dirIsNeg[i] == 0) {
+          double temp = minResult[i];
+          minResult[i] = maxResult[i];
+          maxResult[i] = temp;
+        }
+      }
+      double enter = glm::max(glm::max(minResult.x, minResult.y), minResult.z);
+      double exit = glm::min(glm::min(maxResult.x, maxResult.y), maxResult.z);
+      return enter <= exit && exit >= 0;
+    }
+
+    bool operator()(
+        const CesiumGeospatial::BoundingRegion& boundingRegion) noexcept {
+      return false;
+    }
+    bool
+    operator()(const CesiumGeometry::BoundingSphere& boundingSphere) noexcept {
+      const glm::dvec3& center = boundingSphere.getCenter();
+      double radius = boundingSphere.getRadius();
+      glm::dvec3 l = center - origin;
+      double s = glm::dot(l, direction);
+      double l2 = glm::dot(l, l);
+      double r2 = radius * radius;
+      if (s < 0 && l2 > r2)
+        return false;
+      double m2 = l2 - s * s;
+      if (m2 > r2)
+        return false;
+      // float q = Mathf.Sqrt(r2 - m2);
+      ////float t;
+      // if (l2 > r2)
+      //     result = s - q;
+      // else
+      //     result = s + q;
+      return true;
+    }
+
+    bool
+    operator()(const CesiumGeospatial::BoundingRegionWithLooseFittingHeights&
+                   boundingRegion) noexcept {
+      return false;
+    }
+
+    bool
+    operator()(const CesiumGeospatial::S2CellBoundingVolume& s2Cell) noexcept {
+      return false;
+    }
+  };
+
+  bool hasAssetLoad = false;
+
+  if (std::visit(Operation{origin, direction}, boundingVolume)) {
+
+    hasAssetLoad |=
+        this->_pTileset->addTileToLoadQueue(const_cast<Tile&>(*tile));
+    if (tile->getState() == TileLoadState::ContentLoading)
+      hasAssetLoad |= true;
+  
+    gsl::span<const Tile> children = tile->getChildren();
+
+    if (children.size() == 0 && tile->getState() == TileLoadState::Done &&
+        tile->isRenderContent()) {
+
+      const Cesium3DTilesSelection::TileContent& content = tile->getContent();
+      const Cesium3DTilesSelection::TileRenderContent* pRenderContent =
+          content.getRenderContent();
+
+      if (pRenderContent) {
+        CesiumGltfGameObject* pCesiumGameObject =
+            static_cast<CesiumGltfGameObject*>(
+                pRenderContent->getRenderResources());
+
+        if (pCesiumGameObject && pCesiumGameObject->pGameObject &&
+            pCesiumGameObject->pGameObject
+                    ->GetComponentInChildren<DotNet::UnityEngine::MeshCollider>(
+                        true) != nullptr) {
+
+          result.Add(*pCesiumGameObject->pGameObject);
+        }
+      }
+    }
+
+    for (const Tile& child : children) {
+      hasAssetLoad |=
+          RaycastIfNeedLoad(tileset, &child, origin, direction, result);
+    }
+  }
+
+  return hasAssetLoad;
+}
+
+bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
+    const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
+    const DotNet::UnityEngine::Vector3& origin,
+    const DotNet::UnityEngine::Vector3& direction,
+    DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
+        result) {
+
+  if (!this->_pTileset)
+    return false;
+
+  const LocalHorizontalCoordinateSystem* pCoordinateSystem = nullptr;
+  const DotNet::UnityEngine::GameObject& context = tileset.gameObject();
+  glm::dmat4 unityWorldToTileset =
+      UnityTransforms::fromUnity(context.transform().worldToLocalMatrix());
+  CesiumGeoreference georeferenceComponent =
+      context.GetComponentInParent<CesiumGeoreference>();
+  if (georeferenceComponent != nullptr) {
+    CesiumGeoreferenceImpl& georeference =
+        georeferenceComponent.NativeImplementation();
+    pCoordinateSystem =
+        &georeference.getCoordinateSystem(georeferenceComponent);
+  }
+
+  glm::dvec3 rayPosition = glm::dvec3(
+      unityWorldToTileset * glm::dvec4(origin.x, origin.y, origin.z, 1.0));
+
+  glm::dvec3 rayDirection = glm::dvec3(
+      unityWorldToTileset *
+      glm::dvec4(direction.x, direction.y, direction.z, 0.0));
+
+  if (pCoordinateSystem) {
+    rayPosition = pCoordinateSystem->localPositionToEcef(rayPosition);
+    rayDirection = pCoordinateSystem->localDirectionToEcef(rayDirection);
+  }
+
+  Cesium3DTilesSelection::Tile* pRootTile = _pTileset->getRootTile();
+  if (!pRootTile) {
+    return false;
+  }
+  return RaycastIfNeedLoad(
+      tileset,
+      pRootTile,
+      rayPosition,
+      rayDirection,
+      result);
 }
 
 Tileset* Cesium3DTilesetImpl::getTileset() { return this->_pTileset.get(); }

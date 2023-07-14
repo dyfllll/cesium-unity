@@ -669,5 +669,9 @@ namespace CesiumForUnity
         /// Zoom the Editor camera to this tileset. This method does nothing outside of the Editor.
         /// </summary>
         public partial void FocusTileset();
+
+
+        public partial bool RaycastIfNeedLoad(Vector3 origin, Vector3 direction, System.Collections.Generic.List<GameObject> list);
+
     }
 }

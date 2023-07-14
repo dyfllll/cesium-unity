@@ -523,6 +523,19 @@ namespace CesiumForUnity
             EditorApplication.update += () => { };
 #endif
             UnityRequestUrlOverride.SetRequest(null);
+
+            List<IntPtr> intPtrList = new List<IntPtr>();
+            intPtrList.Add(IntPtr.Zero);
+            intPtrList.Clear();
+
+            List<GameObject> gameObjectList = new List<GameObject>();
+            gameObjectList.Add(null);
+            gameObjectList.Clear();
+
+            meshCollider = go.GetComponentInChildren<MeshCollider>();
+            meshCollider = go.GetComponentInChildren<MeshCollider>(true);
+            MeshCollider[] meshColliders = go.GetComponentsInChildren<MeshCollider>();
+            meshColliders = go.GetComponentsInChildren<MeshCollider>(true);
         }
     }
 }
