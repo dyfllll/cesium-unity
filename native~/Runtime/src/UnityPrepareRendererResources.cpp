@@ -1356,6 +1356,9 @@ void* UnityPrepareRendererResources::prepareInMainThread(
               &gltf,
               &primitive);
         }
+
+        tilesetComponent.SetCustomComponent(primitiveGameObject);
+
       });
 
   tilesetComponent.BroadcastNewGameObjectCreated(*pModelGameObject);

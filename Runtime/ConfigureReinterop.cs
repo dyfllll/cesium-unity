@@ -286,6 +286,9 @@ namespace CesiumForUnity
             ionOverlay.ionAssetID = ionOverlay.ionAssetID;
             ionOverlay.ionAccessToken = ionOverlay.ionAccessToken;
 
+            tilesetFromGameObject.SetCustomComponent(null);
+
+
             CesiumRasterOverlay overlay = go.GetComponent<CesiumRasterOverlay>();
             overlay.showCreditsOnScreen = overlay.showCreditsOnScreen;
             overlay.maximumScreenSpaceError = overlay.maximumScreenSpaceError;
@@ -536,6 +539,8 @@ namespace CesiumForUnity
             meshCollider = go.GetComponentInChildren<MeshCollider>(true);
             MeshCollider[] meshColliders = go.GetComponentsInChildren<MeshCollider>();
             meshColliders = go.GetComponentsInChildren<MeshCollider>(true);
+
+
         }
     }
 }

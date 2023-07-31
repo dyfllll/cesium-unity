@@ -650,6 +650,30 @@ namespace CesiumForUnity
             }
         }
 
+
+        private object _customData;
+
+        public object customData
+        {
+            get => _customData;
+            set
+            {
+                _customData = value;
+            }
+        }
+
+
+        private Action<Cesium3DTileset, GameObject> _onCustomComponent = null;
+        public Action<Cesium3DTileset, GameObject> onCustomComponent
+        {
+            get => _onCustomComponent;
+            set
+            {
+                _onCustomComponent = value;
+            }
+        }
+
+
         private partial void SetShowCreditsOnScreen(bool value);
 
         private partial void Start();
@@ -673,5 +697,10 @@ namespace CesiumForUnity
 
         public partial bool RaycastIfNeedLoad(Vector3 origin, Vector3 direction, System.Collections.Generic.List<GameObject> list);
 
+        public void SetCustomComponent(GameObject target)
+        {
+            if (onCustomComponent != null)
+                onCustomComponent(this, target);
+        }
     }
 }
