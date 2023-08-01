@@ -31,25 +31,32 @@ std::shared_ptr<CreditSystem> pCreditSystem = nullptr;
 
 const std::shared_ptr<GunzipAssetAccessor>
 getAssetAccessor(const DotNet::CesiumForUnity::Cesium3DTileset& unityTileset) {
-  Cesium3DTilesetImpl& tileset = unityTileset.NativeImplementation();
-
-  std::string tempPath =
-      UnityEngine::Application::temporaryCachePath().ToStlString();
-  std::string cacheDBPath = tempPath + "/bim-terrain-request-cache.sqlite";
-
-  int32_t requestsPerCachePrune =
-      CesiumForUnity::CesiumRuntimeSettings::requestsPerCachePrune();
-  uint64_t maxItems = CesiumForUnity::CesiumRuntimeSettings::maxItems();
+  // Cesium3DTilesetImpl& tileset = unityTileset.NativeImplementation();
 
   if (!pSqliteCache) {
+
+    std::string tempPath;
+    if (DotNet::System::String::IsNullOrEmpty(
+            CesiumForUnity::CesiumRuntimeSettings::localCachePath())) {
+      tempPath = UnityEngine::Application::temporaryCachePath().ToStlString();
+
+    } else {
+      tempPath =
+          CesiumForUnity::CesiumRuntimeSettings::localCachePath().ToStlString();
+    }
+
+    std::string cacheDBPath = tempPath + "/bim-terrain-request-cache.sqlite";
+
+    int32_t requestsPerCachePrune =
+        CesiumForUnity::CesiumRuntimeSettings::requestsPerCachePrune();
+    uint64_t maxItems = CesiumForUnity::CesiumRuntimeSettings::maxItems();
+
     pSqliteCache = std::make_shared<SqliteCache>(
         spdlog::default_logger(),
         cacheDBPath,
         requestsPerCachePrune,
         maxItems);
   }
-
-
 
   return std::make_shared<GunzipAssetAccessor>(
       std::make_shared<CachingAssetAccessor>(

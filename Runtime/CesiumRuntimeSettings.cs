@@ -180,5 +180,17 @@ namespace CesiumForUnity
         {
             get => instance._maxItems;
         }
+
+
+        [System.NonSerialized]
+        private string _localCachePath;
+        public static string localCachePath
+        {
+            get => instance._localCachePath;
+            set
+            {
+                instance._localCachePath = value;
+            }
+        }
     }
 }
