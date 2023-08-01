@@ -274,6 +274,7 @@ namespace CesiumForUnity
             tileset.showTilesInHierarchy = tileset.showTilesInHierarchy;
             tileset.updateInEditor = tileset.updateInEditor;
             tileset.showCreditsOnScreen = tileset.showCreditsOnScreen;
+            tileset.localCacheTime = tileset.localCacheTime;
 
             GraphicsFormat gfxFmt = GraphicsFormat.RGB_ETC_UNorm;
             FormatUsage fmtUsage = FormatUsage.Sample;

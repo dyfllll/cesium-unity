@@ -663,6 +663,17 @@ namespace CesiumForUnity
         }
 
 
+        public long _localCacheTime;
+        public long localCacheTime
+        {
+            get => _localCacheTime;
+            set
+            {
+                _localCacheTime = value;
+            }
+        }
+
+
         private Action<Cesium3DTileset, GameObject> _onCustomComponent = null;
         public Action<Cesium3DTileset, GameObject> onCustomComponent
         {
