@@ -425,7 +425,7 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
   if (std::visit(Operation{origin, direction}, boundingVolume)) {
 
     hasAssetLoad |=
-        this->_pTileset->addTileToLoadQueue(const_cast<Tile&>(*tile));
+        this->_pTileset->addTileToForceLoadQueue(const_cast<Tile&>(*tile));
     if (tile->getState() == TileLoadState::ContentLoading)
       hasAssetLoad |= true;
   
@@ -507,6 +507,13 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
       rayPosition,
       rayDirection,
       result);
+}
+
+int32_t Cesium3DTilesetImpl::UnloadForceLoadTiles(
+    const DotNet::CesiumForUnity::Cesium3DTileset& tileset) {
+  if (!this->_pTileset)
+    return 0;
+  return this->_pTileset->unloadForceLoadTiles();
 }
 
 Tileset* Cesium3DTilesetImpl::getTileset() { return this->_pTileset.get(); }

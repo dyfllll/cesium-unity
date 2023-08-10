@@ -708,6 +708,8 @@ namespace CesiumForUnity
 
         public partial bool RaycastIfNeedLoad(Vector3 origin, Vector3 direction, System.Collections.Generic.List<GameObject> list);
 
+        public partial int UnloadForceLoadTiles();
+
         public void SetCustomComponent(GameObject target)
         {
             if (onCustomComponent != null)

@@ -48,7 +48,7 @@ public:
       const DotNet::UnityEngine::Vector3& direction,
       DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
           result);
-
+  int32_t UnloadForceLoadTiles(const DotNet::CesiumForUnity::Cesium3DTileset& tileset);
 
   Cesium3DTilesSelection::Tileset* getTileset();
   const Cesium3DTilesSelection::Tileset* getTileset() const;
