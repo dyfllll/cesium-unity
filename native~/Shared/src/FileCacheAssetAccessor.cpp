@@ -120,9 +120,26 @@ StringSplit(const std::string& str, char delim) {
   return elems;
 }
 
+static inline std::filesystem::path ToPath(const std::string& path) {
+  return std::filesystem::path(std::filesystem::u8path(path));
+}
+
+static inline bool Exists(const std::string& path) {
+  return std::filesystem::exists(ToPath(path));
+}
+
+static inline void
+Rename(const std::string& src, const std::string& dst, std::error_code& error) {
+  std::filesystem::rename(ToPath(src), ToPath(dst), error);
+}
+
+static inline bool Remove(const std::string& path, std::error_code& error) {
+  return std::filesystem::remove(ToPath(path), error);
+}
+
 static std::string ReadFileText(const std::string& path) {
 
-  std::fstream fs(path, std::ios::binary | std::ios::in);
+  std::fstream fs(ToPath(path), std::ios::binary | std::ios::in);
   fs.seekg(0, std::ios::end);
   auto size = fs.tellg();
   fs.seekg(0, std::ios::beg);
@@ -136,7 +153,7 @@ static std::string ReadFileText(const std::string& path) {
 }
 
 static void WriteFileText(const std::string& path, const std::string& content) {
-  std::fstream fs(path, std::ios::binary | std::ios::out);
+  std::fstream fs(ToPath(path), std::ios::binary | std::ios::out);
   if (fs.is_open()) {
     fs.write(content.data(), content.size());
     fs.flush();
@@ -145,7 +162,7 @@ static void WriteFileText(const std::string& path, const std::string& content) {
 }
 
 static std::vector<std::byte> ReadFileData(const std::string& path) {
-  std::ifstream fs(path, std::ios::binary);
+  std::ifstream fs(ToPath(path), std::ios::binary);
   fs.seekg(0, std::ios::end);
   auto size = fs.tellg();
   fs.seekg(0, std::ios::beg);
@@ -164,7 +181,7 @@ static void WriteFileData(
     const gsl::span<const std::byte>& content) {
   if (content.size() == 0)
     return;
-  std::fstream fs(path, std::ios::binary | std::ios::out);
+  std::fstream fs(ToPath(path), std::ios::binary | std::ios::out);
   if (fs.is_open()) {
     fs.write(reinterpret_cast<const char*>(content.data()), content.size());
     fs.flush();
@@ -212,19 +229,18 @@ Future<std::shared_ptr<IAssetRequest>> CesiumAsync::FileCacheAssetAccessor::get(
              threadPool,
              pLogger =
                  this->_pLogger]() -> Future<std::shared_ptr<IAssetRequest>> {
-              // std::filesystem::create_directories(localCahceRoot);
+      
 
               std::string localFilePath = localCahceRoot + unescapeUrl;
               std::string localInfoPath = localFilePath + ".info";
 
               std::filesystem::create_directories(
-                  std::filesystem::path(localFilePath).remove_filename());
+                  ToPath(localFilePath).remove_filename());
 
               std::string etag;
               std::string encodeUrl;
 
-              if (std::filesystem::exists(localFilePath) &&
-                  std::filesystem::exists(localInfoPath)) {
+              if (Exists(localFilePath) && Exists(localInfoPath)) {
 
                 std::string str = ReadFileText(localInfoPath);
                 auto strs = StringSplit(str, '|');
@@ -308,10 +324,7 @@ Future<std::shared_ptr<IAssetRequest>> CesiumAsync::FileCacheAssetAccessor::get(
                               pCompletedRequest->response()->data());
 
                           std::error_code error;
-                          std::filesystem::rename(
-                              tempPath,
-                              localFilePath,
-                              error);
+                          Rename(tempPath, localFilePath, error);
 
                           if (error) {
                             pLogger->info(
@@ -319,13 +332,13 @@ Future<std::shared_ptr<IAssetRequest>> CesiumAsync::FileCacheAssetAccessor::get(
                                 pCompletedRequest->url());
                           }
 
-                          std::filesystem::remove(tempPath, error);
+                          Remove(tempPath, error);
 
                           pRequestToStore = pCompletedRequest;
                         } else {
 
                           // offine cache
-                          if (std::filesystem::exists(localFilePath)) {
+                          if (Exists(localFilePath)) {
 
                             std::vector<std::byte> bytes =
                                 ReadFileData(localFilePath);
