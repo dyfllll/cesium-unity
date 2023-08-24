@@ -119,7 +119,7 @@ namespace Build
 
             if (OperatingSystem.IsWindows())
             {
-                return new Unity($"C:\\Program Files\\Unity 2021.3.23f1\\Editor\\Unity.exe");
+                return new Unity($"C:\\Program Files\\Unity 2021.3.29f1\\Editor\\Unity.exe");
 
                 if (version != null)
                 {
