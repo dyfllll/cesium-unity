@@ -659,6 +659,7 @@ namespace CesiumForUnity
             set
             {
                 _customData = value;
+                this.RecreateTileset();
             }
         }
 
@@ -670,6 +671,29 @@ namespace CesiumForUnity
             set
             {
                 _localCacheTime = value;
+                this.RecreateTileset();
+            }
+        }
+
+        public string _localCachePath;
+        public string localCachePath
+        {
+            get => _localCachePath;
+            set
+            {
+                _localCachePath = value;
+                this.RecreateTileset();
+            }
+        }
+
+        public string _remoteCachePath;
+        public string remoteCachePath
+        {
+            get => _remoteCachePath;
+            set
+            {
+                _remoteCachePath = value;
+                this.RecreateTileset();
             }
         }
 

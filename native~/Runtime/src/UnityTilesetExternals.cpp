@@ -1,5 +1,6 @@
 #include "UnityTilesetExternals.h"
 
+#include "FileCacheAssetAccessor.h"
 #include "UnityAssetAccessor.h"
 #include "UnityPrepareRendererResources.h"
 #include "UnityTaskProcessor.h"
@@ -8,6 +9,7 @@
 #include <CesiumAsync/CachingAssetAccessor.h>
 #include <CesiumAsync/GunzipAssetAccessor.h>
 #include <CesiumAsync/SqliteCache.h>
+#include <CesiumAsync/ThreadPool.h>
 
 #include <DotNet/CesiumForUnity/CesiumCreditSystem.h>
 #include <DotNet/CesiumForUnity/CesiumRuntimeSettings.h>
@@ -25,45 +27,42 @@ namespace CesiumForUnityNative {
 namespace {
 
 // std::shared_ptr<GunzipAssetAccessor> pAccessor = nullptr;
-std::shared_ptr<SqliteCache> pSqliteCache = nullptr;
+// std::shared_ptr<SqliteCache> pSqliteCache = nullptr;
+std::shared_ptr<CachingAssetAccessor> pCachingAssetAccessor = nullptr;
 std::shared_ptr<UnityTaskProcessor> pTaskProcessor = nullptr;
 std::shared_ptr<CreditSystem> pCreditSystem = nullptr;
 
 const std::shared_ptr<GunzipAssetAccessor>
 getAssetAccessor(const DotNet::CesiumForUnity::Cesium3DTileset& unityTileset) {
+
   // Cesium3DTilesetImpl& tileset = unityTileset.NativeImplementation();
+  if (!pCachingAssetAccessor) {
 
-  if (!pSqliteCache) {
+    std::string cacheDBPath =
+        UnityEngine::Application::temporaryCachePath().ToStlString() +
+        "/cesium-request-cache.sqlite";
 
-    std::string tempPath;
-    if (DotNet::System::String::IsNullOrEmpty(
-            CesiumForUnity::CesiumRuntimeSettings::localCachePath())) {
-      tempPath = UnityEngine::Application::temporaryCachePath().ToStlString();
-
-    } else {
-      tempPath =
-          CesiumForUnity::CesiumRuntimeSettings::localCachePath().ToStlString();
-    }
-
-    std::string cacheDBPath = tempPath + "/bim-terrain-request-cache.sqlite";
-
-    int32_t requestsPerCachePrune =
-        CesiumForUnity::CesiumRuntimeSettings::requestsPerCachePrune();
     uint64_t maxItems = CesiumForUnity::CesiumRuntimeSettings::maxItems();
 
-    pSqliteCache = std::make_shared<SqliteCache>(
+    pCachingAssetAccessor = std::make_shared<CachingAssetAccessor>(
         spdlog::default_logger(),
-        cacheDBPath,
-        requestsPerCachePrune,
-        maxItems);
-  }
+        std::make_shared<UnityAssetAccessor>(),
 
+        std::make_shared<SqliteCache>(
+            spdlog::default_logger(),
+            cacheDBPath,
+            maxItems));
+  }
+  int64_t localCacheTime = unityTileset.localCacheTime();
+  std::string localCachePath = unityTileset.localCachePath().ToStlString();
+  std::string remoteCachePath = unityTileset.remoteCachePath().ToStlString();
   return std::make_shared<GunzipAssetAccessor>(
-      std::make_shared<CachingAssetAccessor>(
+      std::make_shared<FileCacheAssetAccessor>(
           spdlog::default_logger(),
-          std::make_shared<UnityAssetAccessor>(),
-          pSqliteCache,
-          unityTileset.localCacheTime()));
+          pCachingAssetAccessor,
+          localCachePath,
+          remoteCachePath,
+          localCacheTime));
 
   /* if (!pAccessor) {
      std::string tempPath =

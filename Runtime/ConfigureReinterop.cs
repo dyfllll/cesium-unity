@@ -245,6 +245,7 @@ namespace CesiumForUnity
 
             UnityWebRequest imageRequest = UnityWebRequestTexture.GetTexture("url");
 
+
             Task.Run(() => { });
 
             Cesium3DTileset tileset = new Cesium3DTileset();
@@ -276,6 +277,8 @@ namespace CesiumForUnity
             tileset.updateInEditor = tileset.updateInEditor;
             tileset.showCreditsOnScreen = tileset.showCreditsOnScreen;
             tileset.localCacheTime = tileset.localCacheTime;
+            tileset.localCachePath = tileset.localCachePath;
+            tileset.remoteCachePath = tileset.remoteCachePath;
 
             GraphicsFormat gfxFmt = GraphicsFormat.RGB_ETC_UNorm;
             FormatUsage fmtUsage = FormatUsage.Sample;
@@ -453,7 +456,6 @@ namespace CesiumForUnity
             string token = CesiumRuntimeSettings.defaultIonAccessToken;
             int requestsPerCachePrune = CesiumRuntimeSettings.requestsPerCachePrune;
             ulong maxItems = CesiumRuntimeSettings.maxItems;
-            string localCachePath = CesiumRuntimeSettings.localCachePath;
 
             Cesium3DTilesetLoadFailureDetails tilesetDetails
                 = new Cesium3DTilesetLoadFailureDetails(tileset, Cesium3DTilesetLoadType.Unknown, 0, "");

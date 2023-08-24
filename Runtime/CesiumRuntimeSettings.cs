@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -30,15 +30,15 @@ namespace CesiumForUnity
                     return _instance;
                 }
 
-                #if UNITY_EDITOR
+#if UNITY_EDITOR
                 _instance = AssetDatabase.LoadAssetAtPath(_filePath, typeof(CesiumRuntimeSettings))
                         as CesiumRuntimeSettings;
-                #else
+#else
                 _instance =
                     Resources.Load("CesiumRuntimeSettings") as CesiumRuntimeSettings;
-                #endif
+#endif
 
-                #if UNITY_EDITOR
+#if UNITY_EDITOR
                 if (_instance == null)
                 {
                     // Create the necessary folders if they don't already exist.
@@ -52,7 +52,7 @@ namespace CesiumForUnity
                         AssetDatabase.CreateFolder("Assets/" + _settingsName, "Resources");
                     }
 
-                    string typeString = "t:"+ typeof(CesiumRuntimeSettings).Name;
+                    string typeString = "t:" + typeof(CesiumRuntimeSettings).Name;
 
                     string[] instanceGUIDS = AssetDatabase.FindAssets(typeString);
 
@@ -65,12 +65,12 @@ namespace CesiumForUnity
                             Debug.LogWarning("Found multiple CesiumRuntimeSettings assets " +
                                 "in the project folder. The first asset found will be used.");
                         }
-                        
+
                         string oldPath = AssetDatabase.GUIDToAssetPath(instanceGUIDS[0]);
                         _instance =
                                 AssetDatabase.LoadAssetAtPath(oldPath, typeof(CesiumRuntimeSettings))
                                     as CesiumRuntimeSettings;
-                        if(_instance != null)
+                        if (_instance != null)
                         {
                             string result = AssetDatabase.MoveAsset(oldPath, _filePath);
                             AssetDatabase.Refresh();
@@ -98,20 +98,20 @@ namespace CesiumForUnity
                         }
                     }
                 }
-                #endif
+#endif
 
                 if (_instance == null)
                 {
                     // Create an instance even if the game is not running in the editor
                     // to prevent a crash.
                     _instance = ScriptableObject.CreateInstance<CesiumRuntimeSettings>();
-                    #if UNITY_EDITOR
+#if UNITY_EDITOR
                     AssetDatabase.CreateAsset(_instance, _filePath);
                     AssetDatabase.Refresh();
-                    #else
+#else
                     Debug.LogError("Cannot find a CesiumRuntimeSettings asset. " +
                         "Any assets that use the project's default token will not load.");
-                    #endif
+#endif
                 }
 
                 return _instance;
@@ -127,7 +127,7 @@ namespace CesiumForUnity
         public static string defaultIonAccessTokenID
         {
             get => instance._defaultIonAccessTokenID;
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             set
             {
                 instance._defaultIonAccessTokenID = value;
@@ -135,7 +135,7 @@ namespace CesiumForUnity
                 AssetDatabase.SaveAssetIfDirty(_instance);
                 AssetDatabase.Refresh();
             }
-            #endif
+#endif
         }
 
         [SerializeField]
@@ -147,7 +147,7 @@ namespace CesiumForUnity
         public static string defaultIonAccessToken
         {
             get => instance._defaultIonAccessToken;
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             set
             {
                 instance._defaultIonAccessToken = value;
@@ -155,7 +155,7 @@ namespace CesiumForUnity
                 AssetDatabase.SaveAssetIfDirty(_instance);
                 AssetDatabase.Refresh();
             }
-            #endif
+#endif
         }
 
         [SerializeField]
@@ -172,7 +172,7 @@ namespace CesiumForUnity
 
         [SerializeField]
         [Tooltip("The maximum number of items should be kept in the Sqlite database after pruning. Must restart Unity to apply changes.")]
-        private ulong  _maxItems = 4096;
+        private ulong _maxItems = 4096;
         /// <summary>
         /// The maximum number of items should be kept in the Sqlite database after pruning.
         /// </summary>
@@ -181,16 +181,5 @@ namespace CesiumForUnity
             get => instance._maxItems;
         }
 
-
-        [System.NonSerialized]
-        private string _localCachePath;
-        public static string localCachePath
-        {
-            get => instance._localCachePath;
-            set
-            {
-                instance._localCachePath = value;
-            }
-        }
     }
 }
