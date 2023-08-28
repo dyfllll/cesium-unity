@@ -279,6 +279,7 @@ namespace CesiumForUnity
             tileset.localCacheTime = tileset.localCacheTime;
             tileset.localCachePath = tileset.localCachePath;
             tileset.remoteCachePath = tileset.remoteCachePath;
+            tileset.useFileCache = tileset.useFileCache;
 
             GraphicsFormat gfxFmt = GraphicsFormat.RGB_ETC_UNorm;
             FormatUsage fmtUsage = FormatUsage.Sample;

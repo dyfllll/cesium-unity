@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -38,42 +38,42 @@ namespace CesiumForUnity
 
         private void OnEnable()
         {
-            this._creditSystem = this.GetComponent<CesiumCreditSystem>();
+            //            this._creditSystem = this.GetComponent<CesiumCreditSystem>();
 
-            if (this._creditSystem == null)
-            {
-                this._creditSystem = CesiumCreditSystem.GetDefaultCreditSystem();
-            }
+            //            if (this._creditSystem == null)
+            //            {
+            //                this._creditSystem = CesiumCreditSystem.GetDefaultCreditSystem();
+            //            }
 
-            this._creditSystem.OnCreditsUpdate += this.SetCredits;
+            //            this._creditSystem.OnCreditsUpdate += this.SetCredits;
 
-            this._uiDocument = this.GetComponent<UIDocument>();
+            //            this._uiDocument = this.GetComponent<UIDocument>();
 
-            if (this._uiDocument.rootVisualElement != null)
-            {
-                this._onScreenCredits = this._uiDocument.rootVisualElement.Q("OnScreenCredits");
-                this._popupCredits = this._uiDocument.rootVisualElement.Q("PopupCredits");
-            }
+            //            if (this._uiDocument.rootVisualElement != null)
+            //            {
+            //                this._onScreenCredits = this._uiDocument.rootVisualElement.Q("OnScreenCredits");
+            //                this._popupCredits = this._uiDocument.rootVisualElement.Q("PopupCredits");
+            //            }
 
-#if UNITY_EDITOR
-            if (!EditorApplication.isPlaying)
-            {
-                return;
-            }
-#endif
+            //#if UNITY_EDITOR
+            //            if (!EditorApplication.isPlaying)
+            //            {
+            //                return;
+            //            }
+            //#endif
 
-            // If no EventSystem exists, create one to handle clicking on credit links.
-            if (EventSystem.current == null)
-            {
-                GameObject eventSystemGameObject = new GameObject("EventSystem");
-                eventSystemGameObject.AddComponent<EventSystem>();
+            //            // If no EventSystem exists, create one to handle clicking on credit links.
+            //            if (EventSystem.current == null)
+            //            {
+            //                GameObject eventSystemGameObject = new GameObject("EventSystem");
+            //                eventSystemGameObject.AddComponent<EventSystem>();
 
-#if ENABLE_INPUT_SYSTEM
-                eventSystemGameObject.AddComponent<InputSystemUIInputModule>();
-#elif ENABLE_LEGACY_INPUT_MANAGER
-                 eventSystemGameObject.AddComponent<StandaloneInputModule>();
-#endif
-            }
+            //#if ENABLE_INPUT_SYSTEM
+            //                eventSystemGameObject.AddComponent<InputSystemUIInputModule>();
+            //#elif ENABLE_LEGACY_INPUT_MANAGER
+            //                 eventSystemGameObject.AddComponent<StandaloneInputModule>();
+            //#endif
+            //            }
         }
 
 
@@ -389,13 +389,13 @@ namespace CesiumForUnity
 
         private void OnDisable()
         {
-#if UNITY_EDITOR
-            ArrayList sceneViews = SceneView.sceneViews;
-            for (int i = 0; i < sceneViews.Count; i++)
-            {
-                this.RemoveCreditsFromSceneView((SceneView)sceneViews[i]);
-            }
-#endif
+            //#if UNITY_EDITOR
+            //            ArrayList sceneViews = SceneView.sceneViews;
+            //            for (int i = 0; i < sceneViews.Count; i++)
+            //            {
+            //                this.RemoveCreditsFromSceneView((SceneView)sceneViews[i]);
+            //            }
+            //#endif
         }
     }
 }

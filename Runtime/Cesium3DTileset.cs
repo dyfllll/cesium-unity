@@ -697,6 +697,17 @@ namespace CesiumForUnity
             }
         }
 
+        public bool _useFileCache;
+        public bool useFileCache
+        {
+            get => _useFileCache;
+            set
+            {
+                _useFileCache = value;
+                this.RecreateTileset();
+            }
+        }
+
 
         private Action<Cesium3DTileset, GameObject> _onCustomComponent = null;
         public Action<Cesium3DTileset, GameObject> onCustomComponent

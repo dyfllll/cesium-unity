@@ -191,13 +191,14 @@ static void WriteFileData(
 
 CesiumAsync::FileCacheAssetAccessor::FileCacheAssetAccessor(
     const std::shared_ptr<spdlog::logger>& pLogger,
-    const std::shared_ptr<CachingAssetAccessor>& pCacheDatabase,
+    const std::shared_ptr<IAssetAccessor>& pCacheDatabase,
+    const std::shared_ptr<ThreadPool>& pThreadPool,
     const std::string& pLocalCachePath,
     const std::string& pRemoteCachePath,
     int64_t pLocalCacheTime)
     : _pLogger(pLogger),
       _pAssetAccessor(pCacheDatabase),
-
+      _pThreadPool(pThreadPool),
       _pLocalCachePath(pLocalCachePath),
       _pRemoteCachePath(pRemoteCachePath),
       _pLocalCacheTime(pLocalCacheTime) {}
@@ -210,15 +211,17 @@ Future<std::shared_ptr<IAssetRequest>> CesiumAsync::FileCacheAssetAccessor::get(
     const std::vector<THeader>& headers) {
 
   //_pLogger->info("unescapeUrl: " + unescapeUrl);
+  // const ThreadPool& threadPool = *_pThreadPool.get();
 
-  const ThreadPool& threadPool = _pAssetAccessor->getThreadPool();
+  const std::shared_ptr<ThreadPool>& threadPool = _pThreadPool;
+
   if (_pLocalCacheTime != 0) {
 
     std::string unescapeUrl = UnescapeUrl(url, _pRemoteCachePath.size());
 
     return asyncSystem
         .runInThreadPool(
-            threadPool,
+            *threadPool,
             [asyncSystem,
              url,
              headers,
@@ -229,8 +232,6 @@ Future<std::shared_ptr<IAssetRequest>> CesiumAsync::FileCacheAssetAccessor::get(
              threadPool,
              pLogger =
                  this->_pLogger]() -> Future<std::shared_ptr<IAssetRequest>> {
-      
-
               std::string localFilePath = localCahceRoot + unescapeUrl;
               std::string localInfoPath = localFilePath + ".info";
 
@@ -268,9 +269,9 @@ Future<std::shared_ptr<IAssetRequest>> CesiumAsync::FileCacheAssetAccessor::get(
                 newHeaders.emplace_back("If-None-Match", etag);
               }
 
-              return pAssetAccessor->getNoCache(asyncSystem, url, newHeaders)
+              return pAssetAccessor->get(asyncSystem, url, newHeaders)
                   .thenInThreadPool(
-                      threadPool,
+                      *threadPool,
                       [etag,
                        localCacheTime,
                        localFilePath,
@@ -365,7 +366,6 @@ Future<std::shared_ptr<IAssetRequest>> CesiumAsync::FileCacheAssetAccessor::get(
             });
 
   } else {
-
     return _pAssetAccessor->get(asyncSystem, url, headers);
   }
 }

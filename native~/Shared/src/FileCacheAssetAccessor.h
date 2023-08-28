@@ -21,7 +21,8 @@ class FileCacheAssetAccessor : public IAssetAccessor {
 public:
   FileCacheAssetAccessor(
       const std::shared_ptr<spdlog::logger>& pLogger,
-      const std::shared_ptr<CachingAssetAccessor>& pCacheDatabase,
+      const std::shared_ptr<IAssetAccessor>& pCacheDatabase,
+      const std::shared_ptr<ThreadPool>& pThreadPool,
       const std::string& pLocalCachePath,
       const std::string& pRemoteCachePath,
       int64_t pLocalCacheTime);
@@ -45,10 +46,11 @@ public:
 
 private:
   std::shared_ptr<spdlog::logger> _pLogger;
+  std::shared_ptr<ThreadPool> _pThreadPool;
   int64_t _pLocalCacheTime;
   std::string _pLocalCachePath;
   std::string _pRemoteCachePath;
-  std::shared_ptr<CachingAssetAccessor> _pAssetAccessor;
+  std::shared_ptr<IAssetAccessor> _pAssetAccessor;
 };
 
 } // namespace CesiumAsync

@@ -26,64 +26,52 @@ namespace CesiumForUnityNative {
 
 namespace {
 
-// std::shared_ptr<GunzipAssetAccessor> pAccessor = nullptr;
-// std::shared_ptr<SqliteCache> pSqliteCache = nullptr;
-std::shared_ptr<CachingAssetAccessor> pCachingAssetAccessor = nullptr;
+std::shared_ptr<GunzipAssetAccessor> pAccessor = nullptr;
 std::shared_ptr<UnityTaskProcessor> pTaskProcessor = nullptr;
 std::shared_ptr<CreditSystem> pCreditSystem = nullptr;
+std::shared_ptr<ThreadPool> pThreadPool = nullptr;
 
 const std::shared_ptr<GunzipAssetAccessor>
 getAssetAccessor(const DotNet::CesiumForUnity::Cesium3DTileset& unityTileset) {
 
-  // Cesium3DTilesetImpl& tileset = unityTileset.NativeImplementation();
-  if (!pCachingAssetAccessor) {
-
-    std::string cacheDBPath =
-        UnityEngine::Application::temporaryCachePath().ToStlString() +
-        "/cesium-request-cache.sqlite";
-
-    uint64_t maxItems = CesiumForUnity::CesiumRuntimeSettings::maxItems();
-
-    pCachingAssetAccessor = std::make_shared<CachingAssetAccessor>(
-        spdlog::default_logger(),
-        std::make_shared<UnityAssetAccessor>(),
-
-        std::make_shared<SqliteCache>(
-            spdlog::default_logger(),
-            cacheDBPath,
-            maxItems));
+  if (!pThreadPool) {
+    pThreadPool = std::make_shared<ThreadPool>(4);
   }
-  int64_t localCacheTime = unityTileset.localCacheTime();
-  std::string localCachePath = unityTileset.localCachePath().ToStlString();
-  std::string remoteCachePath = unityTileset.remoteCachePath().ToStlString();
-  return std::make_shared<GunzipAssetAccessor>(
-      std::make_shared<FileCacheAssetAccessor>(
-          spdlog::default_logger(),
-          pCachingAssetAccessor,
-          localCachePath,
-          remoteCachePath,
-          localCacheTime));
 
-  /* if (!pAccessor) {
-     std::string tempPath =
-         UnityEngine::Application::temporaryCachePath().ToStlString();
-     std::string cacheDBPath = tempPath + "/cesium-request-cache.sqlite";
+  if (!unityTileset.useFileCache()) {
+    if (!pAccessor) {
+      std::string tempPath =
+          UnityEngine::Application::temporaryCachePath().ToStlString();
+      std::string cacheDBPath = tempPath + "/cesium-request-cache.sqlite";
 
-     int32_t requestsPerCachePrune =
-         CesiumForUnity::CesiumRuntimeSettings::requestsPerCachePrune();
-     uint64_t maxItems = CesiumForUnity::CesiumRuntimeSettings::maxItems();
+      int32_t requestsPerCachePrune =
+          CesiumForUnity::CesiumRuntimeSettings::requestsPerCachePrune();
+      uint64_t maxItems = CesiumForUnity::CesiumRuntimeSettings::maxItems();
 
-     pAccessor = std::make_shared<GunzipAssetAccessor>(
-         std::make_shared<CachingAssetAccessor>(
-             spdlog::default_logger(),
-             std::make_shared<UnityAssetAccessor>(),
-             std::make_shared<SqliteCache>(
-                 spdlog::default_logger(),
-                 cacheDBPath,
-                 maxItems),
-             requestsPerCachePrune));
-   }
-   return pAccessor;*/
+      pAccessor = std::make_shared<GunzipAssetAccessor>(
+          std::make_shared<CachingAssetAccessor>(
+              spdlog::default_logger(),
+              std::make_shared<UnityAssetAccessor>(),
+              std::make_shared<SqliteCache>(
+                  spdlog::default_logger(),
+                  cacheDBPath,
+                  maxItems),
+              requestsPerCachePrune));
+    }
+    return pAccessor;
+  } else {
+    int64_t localCacheTime = unityTileset.localCacheTime();
+    std::string localCachePath = unityTileset.localCachePath().ToStlString();
+    std::string remoteCachePath = unityTileset.remoteCachePath().ToStlString();
+    return std::make_shared<GunzipAssetAccessor>(
+        std::make_shared<FileCacheAssetAccessor>(
+            spdlog::default_logger(),
+            std::make_shared<UnityAssetAccessor>(),
+            pThreadPool,
+            localCachePath,
+            remoteCachePath,
+            localCacheTime));
+  }
 }
 
 const std::shared_ptr<UnityTaskProcessor>& getTaskProcessor() {
