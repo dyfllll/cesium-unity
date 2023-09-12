@@ -350,7 +350,7 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
     const glm::dvec3& origin;
     const glm::dvec3& direction;
 
-    // Ö»¼ì²âaabb
+    //aabb
     bool operator()(
         const CesiumGeometry::OrientedBoundingBox& boundingBox) noexcept {
       CesiumGeometry::AxisAlignedBox aabb = boundingBox.toAxisAligned();
@@ -516,6 +516,14 @@ int32_t Cesium3DTilesetImpl::UnloadForceLoadTiles(
   return this->_pTileset->unloadForceLoadTiles();
 }
 
+float Cesium3DTilesetImpl::ComputeLoadProgress(
+    const DotNet::CesiumForUnity::Cesium3DTileset& tileset) {
+  if (getTileset() == nullptr) {
+    return 0;
+  }
+  return getTileset()->computeLoadProgress();
+}
+
 Tileset* Cesium3DTilesetImpl::getTileset() { return this->_pTileset.get(); }
 
 const Tileset* Cesium3DTilesetImpl::getTileset() const {
@@ -623,6 +631,10 @@ void Cesium3DTilesetImpl::LoadTileset(
   supportedFormats.ETC2_RGBA = UnityEngine::SystemInfo::IsFormatSupported(
       DotNet::UnityEngine::Experimental::Rendering::GraphicsFormat::
           RGBA_ETC2_SRGB,
+      DotNet::UnityEngine::Experimental::Rendering::FormatUsage::Sample);
+  supportedFormats.ETC1_RGB = UnityEngine::SystemInfo::IsFormatSupported(
+      DotNet::UnityEngine::Experimental::Rendering::GraphicsFormat::
+          RGB_ETC_UNorm,
       DotNet::UnityEngine::Experimental::Rendering::FormatUsage::Sample);
   supportedFormats.BC1_RGB = DotNet::UnityEngine::SystemInfo::IsFormatSupported(
       DotNet::UnityEngine::Experimental::Rendering::GraphicsFormat::

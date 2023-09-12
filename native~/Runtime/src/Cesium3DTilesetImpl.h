@@ -50,6 +50,9 @@ public:
           result);
   int32_t UnloadForceLoadTiles(const DotNet::CesiumForUnity::Cesium3DTileset& tileset);
 
+  float
+  ComputeLoadProgress(const DotNet::CesiumForUnity::Cesium3DTileset& tileset);
+
   Cesium3DTilesSelection::Tileset* getTileset();
   const Cesium3DTilesSelection::Tileset* getTileset() const;
 

@@ -1,5 +1,27 @@
 # Change Log
 
+### v1.6.1 - 2023-09-03
+
+##### Fixes :wrench:
+
+- Fixed a bug that prevented editor windows from functioning when `com.unity.vectorgraphics` package was installed.
+
+This release also fixes an important bug by updating [cesium-native](https://github.com/CesiumGS/cesium-native) from v0.27.0 to v0.27.1. See the [changelog](https://github.com/CesiumGS/cesium-native/blob/main/CHANGES.md) for a complete list of changes in cesium-native.
+
+### v1.6.0
+
+##### Additions :tada:
+
+- Added support for Universal Windows Platform (UWP), which is required to build applications for the Holo Lens 2.
+- Added `ComputeLoadProgress` function to estimate the percentage of the 3D tileset that has been loaded for the current view.
+
+##### Fixes :wrench:
+
+- Fixed a bug that prevented building on iOS.
+- Fixed a bug where KTX tilesets did not display properly on iOS devices due to a missing check for ETC1 texture format.
+
+In addition to the above, this release updates [cesium-native](https://github.com/CesiumGS/cesium-native) from v0.26.0 to v0.27.0. See the [changelog](https://github.com/CesiumGS/cesium-native/blob/main/CHANGES.md) for a complete list of changes in cesium-native.
+
 ### v1.5.0 - 2023-08-01
 
 ##### Fixes :wrench:

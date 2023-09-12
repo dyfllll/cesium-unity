@@ -719,6 +719,13 @@ namespace CesiumForUnity
             }
         }
 
+        /// <summary>
+        /// Estimate the percentage of the tiles for the current view that have been loaded. 
+        /// </summary>
+        /// <returns>
+        /// A float value between 0 and 100 representing the load progress.
+        /// </returns>
+        public partial float ComputeLoadProgress();
 
         private partial void SetShowCreditsOnScreen(bool value);
 
