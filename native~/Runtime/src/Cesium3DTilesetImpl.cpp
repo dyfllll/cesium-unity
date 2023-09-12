@@ -342,7 +342,8 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
     const glm::dvec3& origin,
     const glm::dvec3& direction,
     DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
-        result) {
+        result,
+    double maxGeometricError) {
 
   const BoundingVolume& boundingVolume = tile->getBoundingVolume();
 
@@ -350,7 +351,7 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
     const glm::dvec3& origin;
     const glm::dvec3& direction;
 
-    //aabb
+    // aabb
     bool operator()(
         const CesiumGeometry::OrientedBoundingBox& boundingBox) noexcept {
       CesiumGeometry::AxisAlignedBox aabb = boundingBox.toAxisAligned();
@@ -428,11 +429,19 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
         this->_pTileset->addTileToForceLoadQueue(const_cast<Tile&>(*tile));
     if (tile->getState() == TileLoadState::ContentLoading)
       hasAssetLoad |= true;
-  
+
     gsl::span<const Tile> children = tile->getChildren();
 
-    if (children.size() == 0 && tile->getState() == TileLoadState::Done &&
-        tile->isRenderContent()) {
+    bool visitChildren;
+
+    if (maxGeometricError == -1) {
+      visitChildren = true;
+    } else {
+      visitChildren = tile->getGeometricError() > maxGeometricError;
+    }
+
+    if ((children.size() == 0 || !visitChildren) &&
+        tile->getState() == TileLoadState::Done && tile->isRenderContent()) {
 
       const Cesium3DTilesSelection::TileContent& content = tile->getContent();
       const Cesium3DTilesSelection::TileRenderContent* pRenderContent =
@@ -453,9 +462,16 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
       }
     }
 
-    for (const Tile& child : children) {
-      hasAssetLoad |=
-          RaycastIfNeedLoad(tileset, &child, origin, direction, result);
+    if (visitChildren) {
+      for (const Tile& child : children) {
+        hasAssetLoad |= RaycastIfNeedLoad(
+            tileset,
+            &child,
+            origin,
+            direction,
+            result,
+            maxGeometricError);
+      }
     }
   }
 
@@ -467,7 +483,8 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
     const DotNet::UnityEngine::Vector3& origin,
     const DotNet::UnityEngine::Vector3& direction,
     DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
-        result) {
+        result,
+    double maxGeometricError) {
 
   if (!this->_pTileset)
     return false;
@@ -506,7 +523,198 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
       pRootTile,
       rayPosition,
       rayDirection,
-      result);
+      result,
+      maxGeometricError);
+}
+
+bool Cesium3DTilesetImpl::IntersectIfNeedLoad(
+    const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
+    const Cesium3DTilesSelection::Tile* tile,
+    const glm::dvec3& minPosition,
+    const glm::dvec3& maxPosition,
+    DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
+        result,
+    double maxGeometricError) {
+
+  const BoundingVolume& boundingVolume = tile->getBoundingVolume();
+
+  struct Operation {
+    const glm::dvec3& minPosition;
+    const glm::dvec3& maxPosition;
+
+    // aabb
+    bool operator()(
+        const CesiumGeometry::OrientedBoundingBox& boundingBox) noexcept {
+      CesiumGeometry::AxisAlignedBox aabb = boundingBox.toAxisAligned();
+      glm::dvec3 pMin = glm::dvec3(aabb.minimumX, aabb.minimumY, aabb.minimumZ);
+      glm::dvec3 pMax = glm::dvec3(aabb.maximumX, aabb.maximumY, aabb.maximumZ);
+
+      if (maxPosition.x < pMin.x || minPosition.x > pMax.x)
+        return false;
+      if (maxPosition.y < pMin.y || minPosition.y > pMax.y)
+        return false;
+      if (maxPosition.z < pMin.z || minPosition.z > pMax.z)
+        return false;
+      return true;
+    }
+
+    bool operator()(
+        const CesiumGeospatial::BoundingRegion& boundingRegion) noexcept {
+      return false;
+    }
+    bool
+    operator()(const CesiumGeometry::BoundingSphere& boundingSphere) noexcept {
+      const glm::dvec3& center = boundingSphere.getCenter();
+      double radius = boundingSphere.getRadius();
+
+      glm::dvec3 pMin = center - glm::dvec3(radius, radius, radius);
+      glm::dvec3 pMax = center + glm::dvec3(radius, radius, radius);
+
+      if (maxPosition.x < pMin.x || minPosition.x > pMax.x)
+        return false;
+      if (maxPosition.y < pMin.y || minPosition.y > pMax.y)
+        return false;
+      if (maxPosition.z < pMin.z || minPosition.z > pMax.z)
+        return false;
+      return true;
+    }
+
+    bool
+    operator()(const CesiumGeospatial::BoundingRegionWithLooseFittingHeights&
+                   boundingRegion) noexcept {
+      return false;
+    }
+
+    bool
+    operator()(const CesiumGeospatial::S2CellBoundingVolume& s2Cell) noexcept {
+      return false;
+    }
+  };
+
+  bool hasAssetLoad = false;
+
+  if (std::visit(Operation{minPosition, maxPosition}, boundingVolume)) {
+
+    hasAssetLoad |=
+        this->_pTileset->addTileToForceLoadQueue(const_cast<Tile&>(*tile));
+    if (tile->getState() == TileLoadState::ContentLoading)
+      hasAssetLoad |= true;
+
+    gsl::span<const Tile> children = tile->getChildren();
+
+    bool visitChildren;
+
+    if (maxGeometricError == -1) {
+      visitChildren = true;
+    } else {
+      visitChildren = tile->getGeometricError() > maxGeometricError;
+    }
+
+    if ((children.size() == 0 || !visitChildren) &&
+        tile->getState() == TileLoadState::Done && tile->isRenderContent()) {
+
+      const Cesium3DTilesSelection::TileContent& content = tile->getContent();
+      const Cesium3DTilesSelection::TileRenderContent* pRenderContent =
+          content.getRenderContent();
+
+      if (pRenderContent) {
+        CesiumGltfGameObject* pCesiumGameObject =
+            static_cast<CesiumGltfGameObject*>(
+                pRenderContent->getRenderResources());
+
+        if (pCesiumGameObject && pCesiumGameObject->pGameObject &&
+            pCesiumGameObject->pGameObject
+                    ->GetComponentInChildren<DotNet::UnityEngine::MeshCollider>(
+                        true) != nullptr) {
+
+          result.Add(*pCesiumGameObject->pGameObject);
+        }
+      }
+    }
+
+    if (visitChildren) {
+      for (const Tile& child : children) {
+        hasAssetLoad |= IntersectIfNeedLoad(
+            tileset,
+            &child,
+            minPosition,
+            maxPosition,
+            result,
+            maxGeometricError);
+      }
+    }
+  }
+
+  return hasAssetLoad;
+}
+
+static void TransformAABB(
+    glm::dvec3& minPos,
+    glm::dvec3& maxPos,
+    const glm::dmat4& matrix) {
+
+  glm::dvec3 center = (minPos + maxPos) * 0.5;
+  glm::dvec3 extents = maxPos - center;
+
+  glm::dvec3 t_center = glm::dvec3(matrix * glm::dvec4(center, 1.0));
+  glm::dmat3 abs_mat = glm::dmat3(
+      glm::abs(glm::dvec3(matrix[0])),
+      glm::abs(glm::dvec3(matrix[1])),
+      glm::abs(glm::dvec3(matrix[2])));
+  glm::dvec3 t_extents = abs_mat * extents;
+
+  minPos = t_center - t_extents;
+  maxPos = t_center + t_extents;
+}
+
+bool Cesium3DTilesetImpl::IntersectIfNeedLoad(
+    const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
+    const DotNet::UnityEngine::Vector3& minPosition,
+    const DotNet::UnityEngine::Vector3& maxPosition,
+    DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
+        result,
+    double maxGeometricError) {
+
+  if (!this->_pTileset)
+    return false;
+
+  const LocalHorizontalCoordinateSystem* pCoordinateSystem = nullptr;
+  const DotNet::UnityEngine::GameObject& context = tileset.gameObject();
+  glm::dmat4 unityWorldToTileset =
+      UnityTransforms::fromUnity(context.transform().worldToLocalMatrix());
+  CesiumGeoreference georeferenceComponent =
+      context.GetComponentInParent<CesiumGeoreference>();
+  if (georeferenceComponent != nullptr) {
+    CesiumGeoreferenceImpl& georeference =
+        georeferenceComponent.NativeImplementation();
+    pCoordinateSystem =
+        &georeference.getCoordinateSystem(georeferenceComponent);
+  }
+
+  glm::dvec3 minPos = glm::dvec3(minPosition.x, minPosition.y, minPosition.z);
+  glm::dvec3 maxPos = glm::dvec3(maxPosition.x, maxPosition.y, maxPosition.z);
+
+  if (pCoordinateSystem) {
+
+    TransformAABB(
+        minPos,
+        maxPos,
+        pCoordinateSystem->getLocalToEcefTransformation() *
+            unityWorldToTileset);
+  }
+
+  Cesium3DTilesSelection::Tile* pRootTile = _pTileset->getRootTile();
+  if (!pRootTile) {
+    return false;
+  }
+
+  return IntersectIfNeedLoad(
+      tileset,
+      pRootTile,
+      minPos,
+      maxPos,
+      result,
+      maxGeometricError);
 }
 
 int32_t Cesium3DTilesetImpl::UnloadForceLoadTiles(

@@ -748,7 +748,9 @@ namespace CesiumForUnity
         public partial void FocusTileset();
 
 
-        public partial bool RaycastIfNeedLoad(Vector3 origin, Vector3 direction, System.Collections.Generic.List<GameObject> list);
+        public partial bool RaycastIfNeedLoad(Vector3 origin, Vector3 direction, System.Collections.Generic.List<GameObject> list, double maxGeometricError = -1);
+
+        public partial bool IntersectIfNeedLoad(Vector3 minPosition, Vector3 maxPosition, System.Collections.Generic.List<GameObject> list, double maxGeometricError = -1);
 
         public partial int UnloadForceLoadTiles();
 

@@ -46,8 +46,16 @@ public:
       const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
       const DotNet::UnityEngine::Vector3& origin,
       const DotNet::UnityEngine::Vector3& direction,
-      DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject>
-          result);
+      DotNet::System::Collections::Generic::List1<DotNet::UnityEngine::GameObject> result,
+      double maxGeometricError);
+  bool IntersectIfNeedLoad(
+      const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
+      const DotNet::UnityEngine::Vector3& minPosition,
+      const DotNet::UnityEngine::Vector3& maxPosition,
+      DotNet::System::Collections::Generic::List1<
+          DotNet::UnityEngine::GameObject> result,
+      double maxGeometricError);
+
   int32_t UnloadForceLoadTiles(const DotNet::CesiumForUnity::Cesium3DTileset& tileset);
 
   float
@@ -72,8 +80,17 @@ private:
       const glm::dvec3& origin,
       const glm::dvec3& direction,
       DotNet::System::Collections::Generic::List1<
-          DotNet::UnityEngine::GameObject>
-          result);
+          DotNet::UnityEngine::GameObject> result,
+      double maxGeometricError);
+  bool IntersectIfNeedLoad(
+      const DotNet::CesiumForUnity::Cesium3DTileset& tileset,
+      const Cesium3DTilesSelection::Tile* tile,
+      const glm::dvec3& minPosition,
+      const glm::dvec3& maxPosition,
+      DotNet::System::Collections::Generic::List1<
+          DotNet::UnityEngine::GameObject> result,
+      double maxGeometricError
+    );
 
   std::unique_ptr<Cesium3DTilesSelection::Tileset> _pTileset;
   Cesium3DTilesSelection::ViewUpdateResult _lastUpdateResult;
