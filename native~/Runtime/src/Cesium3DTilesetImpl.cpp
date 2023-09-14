@@ -432,15 +432,13 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
 
     gsl::span<const Tile> children = tile->getChildren();
 
-    bool visitChildren;
-
-    if (maxGeometricError == -1) {
-      visitChildren = true;
-    } else {
-      visitChildren = tile->getGeometricError() > maxGeometricError;
+    bool useContent = false;
+    if (maxGeometricError != -1) {
+      useContent = tile->getGeometricError() <= maxGeometricError;
     }
+    bool hasContent = false;
 
-    if ((children.size() == 0 || !visitChildren) &&
+    if ((children.size() == 0 || useContent) &&
         tile->getState() == TileLoadState::Done && tile->isRenderContent()) {
 
       const Cesium3DTilesSelection::TileContent& content = tile->getContent();
@@ -458,11 +456,12 @@ bool Cesium3DTilesetImpl::RaycastIfNeedLoad(
                         true) != nullptr) {
 
           result.Add(*pCesiumGameObject->pGameObject);
+          hasContent = true;
         }
       }
     }
 
-    if (visitChildren) {
+    if (!hasContent) {
       for (const Tile& child : children) {
         hasAssetLoad |= RaycastIfNeedLoad(
             tileset,
@@ -602,15 +601,13 @@ bool Cesium3DTilesetImpl::IntersectIfNeedLoad(
 
     gsl::span<const Tile> children = tile->getChildren();
 
-    bool visitChildren;
-
-    if (maxGeometricError == -1) {
-      visitChildren = true;
-    } else {
-      visitChildren = tile->getGeometricError() > maxGeometricError;
+    bool useContent = false;
+    if (maxGeometricError != -1) {
+      useContent = tile->getGeometricError() <= maxGeometricError;
     }
+    bool hasContent = false;
 
-    if ((children.size() == 0 || !visitChildren) &&
+    if ((children.size() == 0 || useContent) &&
         tile->getState() == TileLoadState::Done && tile->isRenderContent()) {
 
       const Cesium3DTilesSelection::TileContent& content = tile->getContent();
@@ -628,11 +625,12 @@ bool Cesium3DTilesetImpl::IntersectIfNeedLoad(
                         true) != nullptr) {
 
           result.Add(*pCesiumGameObject->pGameObject);
+          hasContent = true;
         }
       }
     }
 
-    if (visitChildren) {
+    if (!hasContent) {
       for (const Tile& child : children) {
         hasAssetLoad |= IntersectIfNeedLoad(
             tileset,
