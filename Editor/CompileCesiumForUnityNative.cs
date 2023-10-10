@@ -154,7 +154,8 @@ namespace CesiumForUnity
             if (library.Platform == BuildTarget.Android ||
                 library.Platform == BuildTarget.StandaloneOSX)
             {
-                importer.SetPlatformData(library.Platform, "CPU", library.Cpu == LibraryCpuArchitecture.ARM64 ? "ARM64" : null);
+                if(library.Cpu != null)
+                    importer.SetPlatformData(library.Platform, "CPU", library.Cpu.ToString());
             }
             else if (library.Platform == BuildTarget.WSAPlayer)
             {
@@ -343,6 +344,8 @@ namespace CesiumForUnity
             {
                 if (cpu != null)
                     library.ExtraConfigureArgs.Add("-DCMAKE_OSX_ARCHITECTURES=" + cpu.ToString().ToLowerInvariant());
+
+                library.ExtraConfigureArgs.Add("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13");
             }
 
             if (platform.platform == BuildTarget.WSAPlayer)
